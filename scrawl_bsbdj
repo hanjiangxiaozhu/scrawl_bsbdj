@@ -1,0 +1,61 @@
+#coding:utf-8
+from Tkinter import *
+from ScrolledText import ScrolledText
+import requests,urllib
+import re,threading,sys,os
+reload(sys)
+sys.setdefaultencoding('utf-8')#输出格式为utf-8
+urlname=[]
+urllist=[]
+page=1
+#获取源码
+def getHtml():
+    header={'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36'}
+    global page
+    url='http://www.budejie.com/'+str(page)
+    page +=1
+    html=requests.get(url,headers=header).text
+    #print html
+    reg = re.compile('<div class="j-video-c".*?<a href="/detail-.{8}.html">(.*?)</a>.*?data-mp4="(.*?)">.*?<div class="j-v-d-c" ',re.S)
+    data = re.findall(reg,html)
+    for i, k in data:
+        urlname.append([i, k])
+    #print(data)
+    varl.set('已经获取了第%s页视频'%(page))
+    return data
+
+#下载视频
+id = 1
+def downloadmp4():
+    global id
+    while id <10:
+        data = getHtml()
+        for i in data:
+            print(i)
+            path = 'vedio\%s.mp4'%i[0].decode('utf-8').encode('gbk')#先将ascll解码成utf-8，再编码成gbk
+            urllib.urlretrieve(i[1],path)
+            text.insert(END,str(id)+'.'+i[1]+'\n'+i[0]+'\n')
+            urlname.pop(0)
+        id+=1
+    varl.set('抓取完毕')
+
+#多线程并发：一边GUI呈现，一边下载
+def start():
+    th = threading.Thread(target=downloadmp4)
+    th.start()
+
+#GUI设计
+root = Tk()
+root.title('百思不得其解的视频')
+text = ScrolledText(root,font=('微软雅黑',10))
+text.grid()
+
+varl = StringVar()
+label = Label(root,font = ('微软雅黑',10),textvariable=varl)
+label.grid()
+varl.set('正在爬取……')
+
+button = Button(root,text='开始爬取',font=('微软雅黑',10),command=start)#点击——触发多线程,
+button.grid()
+
+root.mainloop()
